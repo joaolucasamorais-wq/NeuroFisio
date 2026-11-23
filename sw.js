@@ -1,4 +1,25 @@
-const CACHE='neurofisio-fase1-6e6f9b8098e3';const ASSETS=["/","/index.html","/assets/app-6e6f9b8098e3.js","/assets/styles-59fd9d611690.css","/vendor/react.production.min.js","/vendor/react-dom.production.min.js","/vendor/react16-compat.js","/manifest.webmanifest","/icons/icon.svg","/icons/icon-192.png","/icons/icon-512.png"];
-self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
-self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('neurofisio-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
-self.addEventListener('fetch',e=>{const req=e.request;if(req.method!=='GET'||new URL(req.url).origin!==location.origin)return;if(req.mode==='navigate'){e.respondWith(fetch(req).then(res=>{if(res.ok){const copy=res.clone();caches.open(CACHE).then(c=>c.put('/index.html',copy));}return res;}).catch(()=>caches.match('/index.html')));return;}e.respondWith(caches.match(req).then(r=>r||fetch(req).then(res=>{if(res.ok){const cp=res.clone();caches.open(CACHE).then(c=>c.put(req,cp))}return res})));});
+/* Service worker genérico da compilação Vite.
+   A distribuição estática offline recebe uma versão precacheada pelo build-offline. */
+const CACHE_NAME = 'neurofisio-vite-fase1-v1';
+const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'];
+self.addEventListener('install', event => {
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));
+});
+self.addEventListener('activate', event => {
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('neurofisio-') && key !== CACHE_NAME).map(key => caches.delete(key)))).then(() => self.clients.claim()));
+});
+self.addEventListener('fetch', event => {
+  const request = event.request;
+  if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
+  if (request.mode === 'navigate') {
+    event.respondWith(fetch(request).then(response => {
+      if (response.ok) { const clone = response.clone(); caches.open(CACHE_NAME).then(c => c.put('/index.html', clone)); }
+      return response;
+    }).catch(() => caches.match('/index.html')));
+    return;
+  }
+  event.respondWith(caches.match(request).then(cached => cached || fetch(request).then(response => {
+    if (response.ok) { const clone = response.clone(); caches.open(CACHE_NAME).then(c => c.put(request, clone)); }
+    return response;
+  })));
+});
